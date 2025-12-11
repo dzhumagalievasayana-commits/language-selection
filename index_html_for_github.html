@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Выбор языка</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+    .box { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    label, select, input { width: 100%; margin-top: 10px; padding: 10px; font-size: 16px; }
+    button { margin-top: 20px; padding: 12px; width: 100%; font-size: 16px; border: none; border-radius: 8px; background: #4CAF50; color: white; cursor: pointer; }
+    #result { margin-top: 20px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Выбор языка</h2>
+
+    <div id="counter_cn" style="margin-bottom:6px; font-weight:bold; color:#555;"></div>
+    <div id="bar_cn" style="height:12px; background:#ddd; border-radius:6px; overflow:hidden; margin-bottom:20px;"><div id="fill_cn" style="height:100%; width:0%; background:#4CAF50;"></div></div>
+
+    <div id="counter_de" style="margin-bottom:6px; font-weight:bold; color:#555;"></div>
+    <div id="bar_de" style="height:12px; background:#ddd; border-radius:6px; overflow:hidden; margin-bottom:20px;"><div id="fill_de" style="height:100%; width:0%; background:#4CAF50;"></div></div>
+
+    <label>Ваше имя</label>
+    <input id="name" type="text" placeholder="Введите ФИО" />
+
+    <label>Выберите язык</label>
+    <select id="choice">
+      <option value="Китайский">Китайский</option>
+      <option value="Немецкий">Немецкий</option>
+    </select>
+
+    <button onclick="submitForm()">Отправить</button>
+    <div id="result"></div>
+
+    <button onclick="resetAll()" style="margin-top:20px; background:#e53935; color:white; padding:10px; border:none; border-radius:8px; cursor:pointer; width:100%;">Сбросить список и счётчики</button>
+
+    <h3>Текущий список</h3>
+    <table id="table">
+      <thead><tr><th>ФИО</th><th>Выбор</th><th>Назначено</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let limits = { "Китайский": 12, "Немецкий": 13 };
+    let counts = { "Китайский": 0, "Немецкий": 0 };
+    const students = [];
+
+    function showCounters() {
+      document.getElementById('counter_cn').innerText = `${counts["Китайский"]}/12 мест занято`;
+      document.getElementById('counter_de').innerText = `${counts["Немецкий"]}/13 мест занято`;
+    }
+
+    function updateBars() {
+      document.getElementById('fill_cn').style.width = (counts["Китайский"] / 12 * 100) + '%';
+      document.getElementById('fill_de').style.width = (counts["Немецкий"] / 13 * 100) + '%';
+    }
+
+    function lockLanguages() {
+      const cnOption = document.querySelector('#choice option[value="Китайский"]');
+      const deOption = document.querySelector('#choice option[value="Немецкий"]');
+      cnOption.disabled = counts["Китайский"] >= 12;
+      deOption.disabled = counts["Немецкий"] >= 13;
+    }
+
+    function updateTable() {
+      const tbody = document.querySelector('#table tbody');
+      tbody.innerHTML = '';
+      students.forEach(s => {
+        const row = `<tr><td>${s.name}</td><td>${s.choice}</td><td>${s.assigned}</td></tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    function submitForm() {
+      const name = document.getElementById('name').value.trim();
+      const choice = document.getElementById('choice').value;
+
+      if (!name) { alert('Пожалуйста, введите ваше ФИО.'); return; }
+      if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) { alert('Вы уже отправили данные.'); return; }
+
+      let assigned = choice;
+      if (counts[choice] >= limits[choice]) { assigned = choice === "Китайский" ? "Немецкий" : "Китайский"; }
+
+      counts[assigned]++;
+      students.push({ name, choice, assigned });
+
+      updateTable();
+      showCounters();
+      updateBars();
+      lockLanguages();
+
+      document.getElementById('result').innerText = `${name}, ваш назначенный язык: ${assigned}`;
+    }
+
+    function downloadList() {
+      let csv = "ФИО,Выбор,Назначено\n";
+      students.forEach(s => { csv += `${s.name},${s.choice},${s.assigned}\n`; });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'students_list.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetAll() {
+      students.length = 0;
+      counts["Китайский"] = 0;
+      counts["Немецкий"] = 0;
+      updateTable();
+      showCounters();
+      updateBars();
+      lockLanguages();
+      document.getElementById('result').innerText = "Данные полностью сброшены.";
+    }
+
+    showCounters();
+    updateBars();
+    lockLanguages();
+  </script>
+</body>
+</html>
